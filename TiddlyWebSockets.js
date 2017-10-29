@@ -3,9 +3,12 @@ title: $:/plugins/OokTech/TiddlyWebSockets/TiddlyWebSockets.js
 type: application/javascript
 module-type: startup
 
-This adds websockets to the node process for tiddlywiki.
+This is the node component of the web sockets. It works with
+web-sockets-setup.js and ActionWebSocketMessage.js which set up the browser
+side and make the action widget used to send messages to the node process.
 
-This needs to be paired with the action-websocketmessage on the browser side.
+To extend this you make a new file that adds functions to the
+$tw.nodeMessageHandlers object.
 
 \*/
 (function(){
@@ -19,11 +22,11 @@ var WebSocketServer = $tw.node ? require('ws').Server : undefined;
 //var Git = $tw.node ? require('simple-git') : undefined;
 var fs = $tw.node ? require("fs"): undefined;
 
-// initialise the empty $tw.messageHandlers object. This holds the functions that
+// initialise the empty $tw.nodeMessageHandlers object. This holds the functions that
 // are used for each message type
-$tw.messageHandlers = $tw.messageHandlers || {};
+$tw.nodeMessageHandlers = $tw.nodeMessageHandlers || {};
 
-var connections = [];
+$tw.connections = [];
 
 /*
   This sets up the websocket server and attaches it to the $tw object
@@ -45,7 +48,7 @@ var setup = function () {
   // Initialise the connections array
   //var connections = new Array;
   // Put a 0 in the array to start, it wasn't working without putting something // here for some reason.
-  connections.push(0);
+  $tw.connections.push(0);
   // Set the onconnection function
   $tw.wss.on('connection', handleConnection);
 }
@@ -62,17 +65,16 @@ var setup = function () {
 */
 function handleConnection(client) {
   console.log("new connection");
-  connections[0] = client;
+  $tw.connections[0] = client;
   client.on('message', function incoming(event) {
     if (typeof event === 'object') {
-      console.log(Object.keys(event));
+      //console.log(Object.keys(event));
     }
     try {
-      console.log(Object.keys($tw.messageHandlers))
+      console.log(Object.keys($tw.nodeMessageHandlers))
       var eventData = JSON.parse(event);
-      console.log(eventData)
-      if (typeof $tw.messageHandlers[eventData.messageType] === 'function') {
-        $tw.messageHandlers[eventData.messageType](eventData);
+      if (typeof $tw.nodeMessageHandlers[eventData.messageType] === 'function') {
+        $tw.nodeMessageHandlers[eventData.messageType](eventData);
       } else {
         console.log('No handler for message of type ', eventData.messageType);
       }
@@ -80,12 +82,6 @@ function handleConnection(client) {
       console.log(e);
     }
   });
-}
-
-$tw.messageHandlers.test = function(data) {
-  if (data.param) {
-    console.log(data.param);
-  }
 }
 
 //module.exports = setup;

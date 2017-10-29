@@ -18,16 +18,7 @@ Startup Actions Script thing
   exports.after = ["render"];
   exports.synchronous = true;
 
-  var messageHandlers = messageHandlers || {};
-
-  messageHandlers.makeTiddler = function(data) {
-    // The title must exist and must be a string, everything else is optional
-    if (data.fields) {
-      if (typeof data.fields.title === 'string') {
-        $tw.wiki.addTiddler(new $tw.Tiddler(data.fields));
-      }
-    }
-  }
+  $tw.browserMessageHandlers = $tw.browserMessageHandlers || {};
 
   exports.startup = function() {
     // Do all actions on startup.
@@ -46,22 +37,20 @@ Startup Actions Script thing
     var openSocket = function() {
 
     }
-
     /*
       This is a wrapper function, each message from the websocket server has a
       message type and if that message type matches a handler that is defined
       than the data is passed to the handler function.
     */
     var parseMessage = function(event) {
-      console.log(event);
       var eventData = JSON.parse(event.data);
-      if (eventData.messageType) {
-        messageHandlers[eventData.messageType](eventData);
+      console.log("Event data: ",event.data)
+      if (eventData.type) {
+        console.log(Object.keys($tw.browserMessageHandlers))
+        $tw.browserMessageHandlers[eventData.type](eventData);
       }
     }
-
     // Send the message to node using the websocket
     setup();
   }
-
 })();
