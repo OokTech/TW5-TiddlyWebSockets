@@ -1,0 +1,9 @@
+{
+	"title": "$:/plugins/OokTech/TiddlyWebSockets",
+	"description": "Adds web sockets to tiddlywiki",
+	"author": "OokTech",
+	"core-version": ">=5.0.0",
+  "version": "0.0.1",
+	"list": "readme",
+  "plugin-type": "plugin"
+}
