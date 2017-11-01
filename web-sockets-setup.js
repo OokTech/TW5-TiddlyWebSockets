@@ -46,8 +46,10 @@ Startup Actions Script thing
       var eventData = JSON.parse(event.data);
       console.log("Event data: ",event.data)
       if (eventData.type) {
-        console.log(Object.keys($tw.browserMessageHandlers))
-        $tw.browserMessageHandlers[eventData.type](eventData);
+        if (typeof $tw.browserMessageHandlers[eventData.type] === 'function') {
+          console.log(Object.keys($tw.browserMessageHandlers))
+          $tw.browserMessageHandlers[eventData.type](eventData);
+        }
       }
     }
     // Send the message to node using the websocket

@@ -48,7 +48,8 @@ var setup = function () {
   // Initialise the connections array
   //var connections = new Array;
   // Put a 0 in the array to start, it wasn't working without putting something // here for some reason.
-  $tw.connections.push(0);
+
+  //$tw.connections.push(0);
   // Set the onconnection function
   $tw.wss.on('connection', handleConnection);
 }
@@ -62,17 +63,27 @@ var setup = function () {
   The message handler part is a generic wrapper that checks to see if we have a
   handler function for the message type and if so it passes the message to the
   handler, if not it prints an error to the console.
+
+  connection objects are:
+  {
+    "socket": socketObject,
+    "name": the user name for the wiki using this connection
+  }
 */
 function handleConnection(client) {
   console.log("new connection");
-  $tw.connections[0] = client;
+  $tw.connections.push({'socket':client});
   client.on('message', function incoming(event) {
+    var self = this;
+    var thisIndex = $tw.connections.findIndex(function(connection) {return connection.socket === self;});
     if (typeof event === 'object') {
       //console.log(Object.keys(event));
     }
     try {
-      console.log(Object.keys($tw.nodeMessageHandlers))
       var eventData = JSON.parse(event);
+      // Add the source to the eventData object so it can be used later.
+      //eventData.source_connection = $tw.connections.indexOf(this);
+      eventData.source_connection = thisIndex;
       if (typeof $tw.nodeMessageHandlers[eventData.messageType] === 'function') {
         $tw.nodeMessageHandlers[eventData.messageType](eventData);
       } else {
@@ -82,11 +93,25 @@ function handleConnection(client) {
       console.log(e);
     }
   });
+  $tw.connections[Object.keys($tw.connections).length-1].socket.send(JSON.stringify({type: 'listTiddlers'}));
 }
 
 //module.exports = setup;
 if (WebSocketServer) {
   setup()
+  setTimeout(function() {testFunction()}, 1000)
+
+  var testFunction = function() {
+    if ($tw.connections[0]) {
+      if (typeof $tw.connections[0].socket.send === 'function') {
+        $tw.connections[0].socket.send(JSON.stringify({type: "listTiddlers"}))
+      } else {
+        setTimeout(testFunction, 1000)
+      }
+    } else {
+      setTimeout(testFunction, 1000)
+    }
+  }
 }
 
 })();
