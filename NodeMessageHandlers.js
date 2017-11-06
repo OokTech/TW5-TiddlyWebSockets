@@ -5,6 +5,8 @@ module-type: startup
 
 These are message handler functions for the web socket servers. Use this file
 as a template for extending the web socket funcitons.
+
+This handles messages sent to the node process.
 \*/
 (function(){
 
@@ -38,8 +40,39 @@ $tw.nodeMessageHandlers.test = function(data) {
 }
 
 $tw.nodeMessageHandlers.saveTiddler = function(data) {
-  console.log(data);
-  $tw.GateKeeper.saveTiddler(data.tiddler);
+  console.log('Node Save Tiddler');
+  if ($tw.Gatekeeper.EditingTiddlers[data.tiddler.fields.title]) {
+    delete $tw.Gatekeeper.EditingTiddlers[data.tiddler.fields.title];
+    $tw.Gatekeeper.UpdateEditingTiddlers(false);
+  }
+  $tw.Gatekeeper.FileSystemFunctions.saveTiddler(data.tiddler);
+  $tw.wiki.addTiddler(data.tiddler);
+}
+
+$tw.nodeMessageHandlers.deleteTiddler = function(data) {
+  //Something here!
+  console.log('Node Delete Tiddler');
+  if ($tw.Gatekeeper.EditingTiddlers[data.tiddler.fields.title]) {
+    delete $tw.Gatekeeper.EditingTiddlers[data.tiddler.fields.title];
+    $tw.Gatekeeper.UpdateEditingTiddlers(false);
+  }
+  $tw.Gatekeeper.FileSystemFunctions.deleteTiddler(data.tiddler.fields.title);
+  //$tw.wiki.removeTiddler(data.tiddler);
+}
+
+$tw.nodeMessageHandlers.editingTiddler = function(data) {
+  console.log('Editing Tiddler');
+  $tw.Gatekeeper.UpdateEditingTiddlers(data.tiddler);
+}
+
+$tw.nodeMessageHandlers.cancelEditingTiddler = function(data) {
+  console.log('Cancel Editing Tiddler ', data);
+  var title = data.tiddler.slice(10,-1);
+  console.log(title)
+  if ($tw.Gatekeeper.EditingTiddlers[title]) {
+    delete $tw.Gatekeeper.EditingTiddlers[title];
+    $tw.Gatekeeper.UpdateEditingTiddlers(false);
+  }
 }
 
 })()

@@ -3,6 +3,8 @@ title: $:/plugins/OokTech/TiddlyWebSockets/BrowserMessageHandlers.js
 type: application/javascript
 module-type: startup
 
+This handles messages sent to the browser.
+
 These are message handlers for messages sent to the browser. If you want to
 add more functions the easiest way is to use this file as a template and make a
 new file that adds the files you want. To do this you need should copy

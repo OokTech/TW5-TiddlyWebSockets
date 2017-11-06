@@ -1,5 +1,5 @@
 /*\
-title: $:/plugins/OokTech/TiddlyWebSockets/TiddlyWebSockets.js
+title: $:/plugins/OokTech/TiddlyWebSockets/NodeWebSocketsSetup.js
 type: application/javascript
 module-type: startup
 
@@ -72,7 +72,7 @@ var setup = function () {
 */
 function handleConnection(client) {
   console.log("new connection");
-  $tw.connections.push({'socket':client});
+  $tw.connections.push({'socket':client, 'active': true});
   client.on('message', function incoming(event) {
     var self = this;
     var thisIndex = $tw.connections.findIndex(function(connection) {return connection.socket === self;});
