@@ -65,17 +65,29 @@ socket server, but it can be extended for use with other web socket servers.
         For the th-saving-tiddler hook send the saveTiddler message along with
         the tiddler object.
       */
+      /*
       $tw.hooks.addHook("th-saving-tiddler",function(tiddler) {
+        // We add the same actions as cancelling editing here
         console.log('Save Hook');
+        // Save the tiddler to the file system
         var message = JSON.stringify({messageType: 'saveTiddler', tiddler: tiddler});
+        console.log(message)
         $tw.socket.send(message);
-        // do NOT do the normal saving actions for the event
+
+        // Finish the editing part
+        var message = JSON.stringify({messageType: 'cancelEditingTiddler', tiddler: tiddler.fields.title});
+        console.log(message);
+        $tw.socket.send(message);
+
+        // do the normal saving actions for the event
         return tiddler;
       });
+      */
       /*
         For the th-deleting-tiddler hook send the deleteTiddler message along
         with the tiddler object.
       */
+      /*
       $tw.hooks.addHook("th-deleting-tiddler",function(tiddler) {
         console.log('Delete Hook');
         var message = JSON.stringify({messageType: 'deleteTiddler', tiddler: tiddler});
@@ -83,6 +95,7 @@ socket server, but it can be extended for use with other web socket servers.
         // do the normal deleting actions for the event
         return true;
       });
+      */
       $tw.hooks.addHook("th-editing-tiddler", function(event) {
         console.log('Editing tiddler event: ', event);
         var message = JSON.stringify({messageType: 'editingTiddler', tiddler: event.tiddlerTitle});
@@ -111,6 +124,22 @@ socket server, but it can be extended for use with other web socket servers.
       th-relinking-tiddler
       th-renaming-tiddler
       */
+
+      // Listen out for changes to tiddlers
+    	$tw.wiki.addEventListener("change",function(changes) {
+        Object.keys(changes).forEach(function(tiddlerTitle) {
+          if (changes[tiddlerTitle].modified) {
+            console.log('Modified/Created Tiddler');
+            var tiddler = $tw.wiki.getTiddler(tiddlerTitle);
+            var message = JSON.stringify({messageType: 'saveTiddler', tiddler: tiddler});
+            $tw.socket.send(message);
+          } else if (changes[tiddlerTitle].deleted) {
+            console.log('Deleted Tiddler');
+            var message = JSON.stringify({messageType: 'deleteTiddler', tiddler: tiddlerTitle});
+            $tw.socket.send(message);
+          }
+        })
+    	});
     }
     // Send the message to node using the websocket
     setup();

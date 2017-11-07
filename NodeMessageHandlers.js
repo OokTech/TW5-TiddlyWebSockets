@@ -40,24 +40,37 @@ $tw.nodeMessageHandlers.test = function(data) {
 }
 
 $tw.nodeMessageHandlers.saveTiddler = function(data) {
-  console.log('Node Save Tiddler');
-  if ($tw.Gatekeeper.EditingTiddlers[data.tiddler.fields.title]) {
-    delete $tw.Gatekeeper.EditingTiddlers[data.tiddler.fields.title];
-    $tw.Gatekeeper.UpdateEditingTiddlers(false);
+  if (data.tiddler.fields) {
+    if (!data.tiddler.fields['draft.of']) {
+      $tw.nodeMessageHandlers.cancelEditingTiddler({data:data.tiddler.fields.title});
+      $tw.Gatekeeper.WaitingList[data.source_connection] = $tw.Gatekeeper.WaitingList[data.source_connection] || {};
+      if (!$tw.Gatekeeper.WaitingList[data.source_connection][data.tiddler.fields.title]) {
+        console.log('Node Save Tiddler');
+        if (!$tw.boot.files[data.tiddler.fields.title]) {
+          $tw.Gatekeeper.FileSystemFunctions.saveTiddler(data.tiddler);
+        } else {
+          // If changed send tiddler
+          var tiddlerObject = $tw.loadTiddlersFromFile($tw.boot.files[data.tiddler.fields.title].filepath);
+          var changed = $tw.Gatekeeper.FileSystemFunctions.TiddlerHasChanged(data.tiddler, tiddlerObject);
+          if (changed) {
+            $tw.Gatekeeper.FileSystemFunctions.saveTiddler(data.tiddler);
+          }
+        }
+      } else {
+        $tw.Gatekeeper.WaitingList[data.source_connection][data.tiddler.fields.title] = false;
+      }
+    }
   }
-  $tw.Gatekeeper.FileSystemFunctions.saveTiddler(data.tiddler);
-  $tw.wiki.addTiddler(data.tiddler);
 }
 
 $tw.nodeMessageHandlers.deleteTiddler = function(data) {
   //Something here!
   console.log('Node Delete Tiddler');
-  if ($tw.Gatekeeper.EditingTiddlers[data.tiddler.fields.title]) {
-    delete $tw.Gatekeeper.EditingTiddlers[data.tiddler.fields.title];
+  $tw.Gatekeeper.FileSystemFunctions.deleteTiddler(data.tiddler);
+  if ($tw.Gatekeeper.EditingTiddlers[data.tiddler]) {
+    delete $tw.Gatekeeper.EditingTiddlers[data.tiddler];
     $tw.Gatekeeper.UpdateEditingTiddlers(false);
   }
-  $tw.Gatekeeper.FileSystemFunctions.deleteTiddler(data.tiddler.fields.title);
-  //$tw.wiki.removeTiddler(data.tiddler);
 }
 
 $tw.nodeMessageHandlers.editingTiddler = function(data) {
@@ -66,9 +79,20 @@ $tw.nodeMessageHandlers.editingTiddler = function(data) {
 }
 
 $tw.nodeMessageHandlers.cancelEditingTiddler = function(data) {
-  console.log('Cancel Editing Tiddler ', data);
-  var title = data.tiddler.slice(10,-1);
-  console.log(title)
+  console.log('Cancel Editing Tiddler');
+  if (typeof data.data === 'string') {
+    if (data.data.startsWith("Draft of '")) {
+      var title = data.data.slice(10,-1);
+    } else {
+      var title = data.data;
+    }
+  } else {
+    if (data.tiddler.startsWith("Draft of '")) {
+      var title = data.tiddler.slice(10,-1);
+    } else {
+      var title = data.tiddler;
+    }
+  }
   if ($tw.Gatekeeper.EditingTiddlers[title]) {
     delete $tw.Gatekeeper.EditingTiddlers[title];
     $tw.Gatekeeper.UpdateEditingTiddlers(false);
