@@ -126,19 +126,29 @@ socket server, but it can be extended for use with other web socket servers.
       */
 
       // Listen out for changes to tiddlers
+      $tw.Gatekeeper = $tw.Gatekeeper || {};
+      $tw.Gatekeeper.ExcludeList = $tw.Gatekeeper.ExcludeList || [];
+      if ($tw.Gatekeeper.ExcludeList.indexOf('$:/StoryList') === -1) {
+        $tw.Gatekeeper.ExcludeList.push('$:/StoryList');
+      }
+      if ($tw.Gatekeeper.ExcludeList.indexOf('$:/HistoryList') === -1) {
+        $tw.Gatekeeper.ExcludeList.push('$:/HistoryList');
+      }
     	$tw.wiki.addEventListener("change",function(changes) {
         Object.keys(changes).forEach(function(tiddlerTitle) {
-          if (changes[tiddlerTitle].modified) {
-            console.log('Modified/Created Tiddler');
-            var tiddler = $tw.wiki.getTiddler(tiddlerTitle);
-            var message = JSON.stringify({messageType: 'saveTiddler', tiddler: tiddler});
-            $tw.socket.send(message);
-          } else if (changes[tiddlerTitle].deleted) {
-            console.log('Deleted Tiddler');
-            var message = JSON.stringify({messageType: 'deleteTiddler', tiddler: tiddlerTitle});
-            $tw.socket.send(message);
+          if ($tw.Gatekeeper.ExcludeList.indexOf(tiddlerTitle) === -1 && !tiddlerTitle.startsWith('$:/state/') && !tiddlerTitle.startsWith('$:/temp/')) {
+            if (changes[tiddlerTitle].modified) {
+              console.log('Modified/Created Tiddler');
+              var tiddler = $tw.wiki.getTiddler(tiddlerTitle);
+              var message = JSON.stringify({messageType: 'saveTiddler', tiddler: tiddler});
+              $tw.socket.send(message);
+            } else if (changes[tiddlerTitle].deleted) {
+              console.log('Deleted Tiddler');
+              var message = JSON.stringify({messageType: 'deleteTiddler', tiddler: tiddlerTitle});
+              $tw.socket.send(message);
+            }
           }
-        })
+        });
     	});
     }
     // Send the message to node using the websocket
